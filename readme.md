@@ -178,5 +178,7 @@ Abra `http://localhost:5500` no navegador.
 ---
 
 ## Licença
+Logica Distribuição
+
 
 Projeto proprietário — Lógica Distribuição. Todos os direitos reservados.
