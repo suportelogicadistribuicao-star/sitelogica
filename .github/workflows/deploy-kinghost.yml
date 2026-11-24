@@ -93,11 +93,16 @@ jobs:
           cat /etc/ssl/certs/ca-certificates.crt \
               .github/certs/globalsign-gcc-r46-alphassl-ca-2025.pem > "$CA_BUNDLE"
 
+          # Diagnóstico temporário: `debug 3` imprime cada comando FTP, a
+          # resposta do servidor e o handshake TLS (o lftp mostra a senha como
+          # "PASS XXXX" e o GitHub ainda mascara o secret no log). Remover
+          # quando o deploy estabilizar.
           lftp <<EOF
+          debug -t 3
           set cmd:fail-exit yes
           set dns:order "inet"
-          set net:timeout 30
-          set net:max-retries 3
+          set net:timeout 20
+          set net:max-retries 2
           set net:reconnect-interval-base 5
           set ftp:ssl-force yes
           set ftp:ssl-protect-data yes
@@ -106,6 +111,8 @@ jobs:
           set ssl:check-hostname yes
           set ssl:ca-file "$CA_BUNDLE"
           open --env-password -u "$FTP_USER" "$FTP_HOST"
+          cd /www/
+          cls -l /www/.ftp-deploy-sync-state.json || echo "listagem de /www/ falhou"
           mirror --reverse --verbose --no-perms ./dist/ /www/
           bye
           EOF
