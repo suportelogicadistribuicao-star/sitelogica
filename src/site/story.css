@@ -1,0 +1,644 @@
+/* História de abertura do site institucional (index.html).
+   O palco fica preso (sticky) enquanto a seção alta rola; o story.ts
+   liga o progresso do scroll à linha do tempo. Sem JS ou com movimento
+   reduzido, a seção vira uma tela estática. */
+
+.story {
+  --plum: #24102a;
+  --plum-soft: #3a1b42;
+  --paper: #fbf7f1;
+  --pin: #e5332a;
+
+  position: relative;
+  /* Mesmo tom do palco: se a barra do navegador do celular aparecer ou
+     sumir no meio do scroll, não sobra faixa clara embaixo. */
+  background: var(--plum);
+  color: var(--paper);
+  font-family: "Manrope", Arial, Helvetica, sans-serif;
+}
+
+/* A altura extra é a distância de scroll que move a animação. A pista
+   (--story-pista, definida pelo story.ts quando o palco está ligado) é
+   uma sobra depois do último quadro: o scroll que vem embalado gasta a
+   inércia ali, com o palco ainda preso na tela, em vez de cair no rodapé. */
+.story.is-live {
+  height: calc(640vh + var(--story-pista, 0px));
+}
+
+/* Depois de vista até o fim, a animação solta o scroll: a seção volta a
+   ter só a altura do palco (ver "scroll" em story.ts). */
+.story.is-live.is-collapsed {
+  height: auto;
+}
+
+.story-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  /* dvh = área realmente visível no celular, com ou sem a barra do
+     navegador; o palco ocupa a tela inteira nos dois casos. */
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 50% at 78% 30%, rgba(159, 39, 155, 0.34), transparent 70%),
+    radial-gradient(40% 40% at 12% 92%, rgba(245, 130, 31, 0.16), transparent 70%),
+    var(--plum);
+}
+
+/* Tudo o que é da história fica neste bloco, que o palco (palco.ts)
+   esmaece inteiro ao abrir as outras seções. */
+.story-quadro {
+  position: absolute;
+  inset: 0;
+}
+
+/* TEXTOS */
+
+.story-captions {
+  position: absolute;
+  z-index: 5;
+  left: 6%;
+  top: 92px;
+  bottom: 0;
+  width: 36%;
+  pointer-events: none;
+}
+
+.story-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  visibility: hidden;
+}
+
+.story-caption:first-child {
+  visibility: visible;
+}
+
+/* Camada própria para o que a história só move ou esmaece (legendas,
+   itens da tela do celular, rótulos do mapa): com a camada pronta, o
+   navegador anima sem repintar. Medido num celular simulado, tirou de um
+   quarto a um terço do trabalho por quadro do scroll. */
+.story.is-live .story-caption,
+.story.is-live .story-tile,
+.story.is-live .story-map-label,
+.story.is-live .story-order-button,
+.story.is-live .story-order-button span {
+  will-change: transform, opacity;
+}
+
+.story-caption h1,
+.story-caption h2 {
+  font-size: clamp(30px, 3.9vw, 62px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  color: var(--paper);
+  text-wrap: balance;
+}
+
+.story-caption p {
+  margin-top: 20px;
+  max-width: 34ch;
+  font-size: clamp(16px, 1.25vw, 19px);
+  line-height: 1.55;
+  font-weight: 500;
+  color: rgba(251, 247, 241, 0.74);
+}
+
+.story-caption .story-motto {
+  font-size: clamp(34px, 4.6vw, 74px);
+}
+
+.story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+  pointer-events: auto;
+}
+
+.story-actions .btn-secondary {
+  color: var(--paper);
+  border-color: rgba(251, 247, 241, 0.34);
+  background: rgba(251, 247, 241, 0.06);
+}
+
+.story-actions a:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+.story-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(251, 247, 241, 0.6);
+}
+
+.story-scroll-hint::before {
+  content: "";
+  width: 2px;
+  height: 34px;
+  border-radius: 2px;
+  background: linear-gradient(var(--orange), transparent);
+}
+
+/* Faixa atrás do texto, usada só quando o mapa cobre a tela (celular).
+   A altura vem do story.ts, que conhece o tamanho de cada texto. */
+
+.story-scrim {
+  display: none;
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--plum) calc(100% - 36px),
+    rgba(36, 16, 42, 0)
+  );
+}
+
+/* CENA */
+
+.story-scene {
+  position: absolute;
+  z-index: 2;
+  left: 42%;
+  right: 3%;
+  top: 92px;
+  bottom: 0;
+  perspective: 1400px;
+}
+
+.story:not(.is-live) .story-scene {
+  visibility: hidden;
+}
+
+.story-scene > * {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  will-change: transform;
+}
+
+/* Marcas */
+
+.story-chip {
+  width: 96px;
+  height: 96px;
+  margin: -48px 0 0 -48px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(8, 2, 10, 0.38);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.story-chip img {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+}
+
+/* Celular */
+
+.story-phone {
+  width: 250px;
+  height: 510px;
+  margin: -255px 0 0 -125px;
+  padding: 9px;
+  border-radius: 40px;
+  background: #120713;
+  box-shadow:
+    0 0 0 2px rgba(251, 247, 241, 0.14),
+    0 40px 80px rgba(8, 2, 10, 0.55);
+}
+
+.story-screen {
+  position: relative;
+  height: 100%;
+  border-radius: 32px;
+  background: var(--paper);
+  color: #2b202a;
+  padding: 30px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.story-screen::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 62px;
+  height: 14px;
+  margin-left: -31px;
+  border-radius: 10px;
+  background: #120713;
+}
+
+.story-screen-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.story-screen-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a6c79;
+}
+
+.story-tiles {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.story-tile {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(21, 16, 21, 0.08);
+  display: grid;
+  place-items: center;
+}
+
+.story-tile img {
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+}
+
+.story-count {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a6c79;
+}
+
+.story-count strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2b202a;
+  font-variant-numeric: tabular-nums;
+}
+
+.story-order-button {
+  position: relative;
+  margin-top: 10px;
+  height: 46px;
+  border-radius: 23px;
+  background: var(--purple);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.story-order-button span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.story-order-button .is-sent {
+  visibility: hidden;
+}
+
+/* Mão */
+
+.story-hand {
+  width: 200px;
+  height: 300px;
+  filter: drop-shadow(0 18px 24px rgba(8, 2, 10, 0.45));
+}
+
+/* Caixas do pedido */
+
+.story-parcel {
+  width: 46px;
+  height: 40px;
+  margin: -20px 0 0 -23px;
+  border-radius: 7px;
+  background: #d99a55;
+  box-shadow: 0 10px 20px rgba(8, 2, 10, 0.4);
+}
+
+.story-parcel::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  margin-left: -5px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Caminhão (vista lateral) */
+
+.story-truck {
+  width: 440px;
+  height: 230px;
+  margin: -115px 0 0 -220px;
+  filter: drop-shadow(0 26px 30px rgba(8, 2, 10, 0.5));
+}
+
+/* Mapa. O story.ts define o tamanho na tela e o trecho do desenho que
+   aparece: um cartão nas telas largas, a tela inteira no celular. */
+
+.story-map {
+  /* unidades do desenho por pixel de tela, para manter traços legíveis */
+  --u: 1;
+  /* quantas vezes o mapa é desenhado maior do que aparece (ver story.ts);
+     rótulos e alfinete crescem na mesma medida para não encolherem */
+  --q: 1;
+  transform-style: preserve-3d;
+}
+
+.story-map > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  box-shadow: 0 60px 90px rgba(8, 2, 10, 0.55);
+}
+
+.story.is-fullmap .story-map > svg {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* A rota e o caminhão ficam num segundo desenho, do mesmo tamanho e por
+   cima do mapa, em camada própria: o que muda a cada quadro é só ela. */
+.story-map > .story-map-rota {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-shadow: none;
+  will-change: transform;
+}
+
+.story-route {
+  stroke-width: calc(9px * var(--u));
+}
+
+.story-route-ghost {
+  stroke-width: calc(4px * var(--u));
+  stroke-dasharray: calc(4px * var(--u)) calc(12px * var(--u));
+}
+
+/* Rótulos e alfinete ficam no ponto que o story.ts informa (left/top);
+   o deslocamento abaixo só afasta cada um do seu ponto. */
+
+.story-map-label {
+  position: absolute;
+  padding: 0.55em 0.9em;
+  border-radius: 0.9em;
+  background: #ffffff;
+  color: #2b202a;
+  font-size: calc(14px * var(--q));
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 0.43em 1.3em rgba(21, 16, 21, 0.16);
+}
+
+.story-map-label small {
+  display: block;
+  font-size: 0.82em;
+  font-weight: 600;
+  color: #7a6c79;
+}
+
+.story-map-label.is-cd {
+  transform: translate(calc(-41px * var(--q)), calc(-100% - 26px * var(--q)));
+}
+
+/* No celular os rótulos ficam maiores em relação à rota; acima do ponto
+   de partida o rótulo cobriria a primeira curva, então vai para baixo. */
+.story.is-fullmap .story-map-label.is-cd {
+  transform: translate(calc(-14px * var(--q)), calc(24px * var(--q)));
+}
+
+.story-map-label.is-store {
+  transform: translate(calc(-100% - 31px * var(--q)), calc(-100% - 19px * var(--q)));
+}
+
+.story-pin {
+  position: absolute;
+  width: calc(46px * var(--q));
+  height: calc(60px * var(--q));
+  filter: drop-shadow(0 8px 10px rgba(21, 16, 21, 0.35));
+}
+
+.story-pin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* CELULAR (tela estreita, em pé): a animação ocupa a tela inteira. O
+   texto fica no alto, a cena usa todo o resto, e o cabeçalho do site sai
+   de cena enquanto a história roda. Com o aparelho deitado vale o
+   desenho das telas largas, que cabe melhor na pouca altura. */
+
+@media (max-width: 860px) and (orientation: portrait) {
+  .story-captions {
+    left: 6%;
+    right: 6%;
+    width: auto;
+    top: 0;
+  }
+
+  .story-caption {
+    top: 26px;
+    transform: none;
+  }
+
+  /* A abertura aparece com o cabeçalho (84px) ainda na tela. */
+  .story-caption:first-child {
+    top: 102px;
+  }
+
+  .story-caption h1,
+  .story-caption h2 {
+    font-size: clamp(25px, 7vw, 38px);
+  }
+
+  .story-caption .story-motto {
+    font-size: clamp(27px, 7.6vw, 42px);
+  }
+
+  .story-caption p {
+    margin-top: 12px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .story-actions {
+    margin-top: 16px;
+    gap: 8px;
+  }
+
+  .story-actions .btn-primary,
+  .story-actions .btn-secondary {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+
+  .story-scroll-hint {
+    margin-top: 14px;
+  }
+
+  .story-scroll-hint::before {
+    height: 22px;
+  }
+
+  .story-scene {
+    left: 0;
+    right: 0;
+    top: 0;
+  }
+
+  .story-scrim {
+    display: block;
+  }
+
+  /* O story.ts liga story-imersivo enquanto a história está na tela. */
+  body.entered.story-solto .header {
+    transition: transform 0.35s ease;
+    transition-delay: 0s;
+  }
+
+  body.entered.story-imersivo .header {
+    transform: translateY(-160%);
+    pointer-events: none;
+  }
+}
+
+/* Celulares baixos: o texto de apoio cede o espaço para a cena. */
+
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 600px) {
+  .story-caption:first-child p,
+  .story-caption:last-child p {
+    display: none;
+  }
+}
+
+/* Telas largas e baixas (celular deitado, janela achatada): o texto
+   encolhe para caber na altura. */
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .story-caption h1,
+  .story-caption h2 {
+    font-size: clamp(20px, 3.1vw, 30px);
+  }
+
+  .story-caption .story-motto {
+    font-size: clamp(22px, 3.4vw, 32px);
+  }
+
+  .story-caption p {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .story-caption:last-child p {
+    display: none;
+  }
+
+  .story-actions {
+    margin-top: 14px;
+    gap: 8px;
+  }
+
+  .story-actions .btn-primary,
+  .story-actions .btn-secondary {
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+  }
+
+  .story-scroll-hint {
+    margin-top: 12px;
+  }
+
+  .story-scroll-hint::before {
+    height: 20px;
+  }
+}
+
+/* Movimento reduzido: sem scroll animado. Mostra a abertura e a frase
+   final empilhadas, com o mapa já pronto. */
+
+.story.is-static .story-caption {
+  position: static;
+  transform: none;
+  visibility: hidden;
+  display: none;
+}
+
+.story.is-static .story-caption:first-child,
+.story.is-static .story-caption:last-child {
+  display: block;
+  visibility: visible;
+}
+
+.story.is-static .story-caption:last-child {
+  margin-top: 28px;
+}
+
+.story.is-static .story-captions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.story.is-static .story-scroll-hint {
+  display: none;
+}
+
+.story.is-static .story-caption:last-child .story-motto {
+  font-size: clamp(20px, 2vw, 28px);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 860px) and (orientation: portrait) {
+  /* Aqui os dois textos ficam um sobre o outro e ocupam boa parte de uma
+     tela; parada, a seção pode passar da altura da tela para o mapa
+     caber inteiro abaixo deles. */
+  .story.is-static .story-stage {
+    height: max(100vh, 940px);
+    height: max(100dvh, 940px);
+  }
+
+  .story.is-static .story-captions {
+    justify-content: flex-start;
+    padding-top: 102px;
+  }
+
+  .story.is-static .story-caption:last-child {
+    margin-top: 18px;
+  }
+}

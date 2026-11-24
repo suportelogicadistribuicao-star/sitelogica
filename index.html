@@ -11,8 +11,13 @@
     content="A Lógica Distribuição conecta grandes indústrias ao varejo com operação eficiente, atendimento próximo e um portfólio estratégico."
   />
 
-  <link rel="icon" type="image/png" href="assets/images/logo/logo-logica.png" />
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" type="image/png" href="/assets/images/logo/logo-logica.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/src/site/story.css" />
+  <link rel="stylesheet" href="/src/site/palco.css" />
 </head>
 
 <body>
@@ -28,6 +33,7 @@
 
   <header class="header" id="header">
     <nav class="nav">
+      <a href="#historia">Início</a>
       <a href="#industrias">Indústrias</a>
       <a href="#sobre">Sobre</a>
       <a href="#catalogo">Catálogo</a>
@@ -38,7 +44,10 @@
       <img src="assets/images/logo/logo-logica.png" alt="Lógica Distribuição" class="header-logo" />
     </div>
 
-    <a href="https://w.app/rxsu0a" target="_blank" class="header-button">Fale conosco</a>
+    <div class="header-actions">
+      <a href="https://wa.me/5535998524730?text=Ol%C3%A1,%20te%20encontrei%20pelo%20site%20da%20L%C3%B3gica%20Distribui%C3%A7%C3%A3o" target="_blank" class="header-button">Fale conosco</a>
+      <a href="https://logicargv.logicadistribuicao.com.br/" class="header-portal">Acessar portal</a>
+    </div>
 
     <button class="mobile-menu-button" id="mobileMenuButton" aria-label="Abrir menu">
       <span></span>
@@ -54,87 +63,185 @@
     </div>
 
     <nav class="mobile-nav">
+      <a href="#historia">Início</a>
       <a href="#industrias">Indústrias</a>
       <a href="#sobre">Sobre</a>
       <a href="#catalogo">Catálogo</a>
       <a href="#contato">Contato</a>
     </nav>
 
-    <a href="https://w.app/rxsu0a" target="_blank" class="mobile-menu-cta">
+    <a href="https://wa.me/5535998524730?text=Ol%C3%A1,%20te%20encontrei%20pelo%20site%20da%20L%C3%B3gica%20Distribui%C3%A7%C3%A3o" target="_blank" class="mobile-menu-cta">
       Fale com a equipe comercial
     </a>
+
+    <a href="https://logicargv.logicadistribuicao.com.br/" class="mobile-menu-portal">Acessar portal</a>
   </div>
 
   <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 
   <main class="site-content" id="siteContent">
 
-    <section class="hero">
-      <div class="hero-text">
-        <span class="eyebrow">Distribuição estratégica no Sul de Minas</span>
+    <section class="story" id="historia" aria-label="Como um pedido chega até a sua loja">
+      <div class="story-stage">
 
-        <h1>
-          Distribuição inteligente para marcas que querem chegar mais longe.
-        </h1>
+        <!-- O quadro reúne tudo o que é da história: o palco (palco.ts)
+             esmaece este bloco inteiro ao abrir as outras seções, sem mexer
+             nos elementos que o story.ts anima. -->
+        <div class="story-quadro">
 
-        <p>
-          A Lógica conecta grandes indústrias ao varejo com operação eficiente,
-          atendimento próximo e um portfólio estratégico para gerar giro, presença
-          e resultado no ponto de venda.
-        </p>
-
-        <div class="hero-actions">
-          <a href="#industrias" class="btn-primary">Conhecer indústrias</a>
-          <a href="https://w.app/rxsu0a" target="_blank" class="btn-secondary">
-            Falar com a equipe comercial
-          </a>
-        </div>
-
-        <div class="hero-stats">
-          <div>
-            <strong>Indústria</strong>
-            <span>marcas fortes no portfólio</span>
+        <div class="story-captions">
+          <div class="story-caption">
+            <h1>Distribuição inteligente para marcas que querem chegar mais longe.</h1>
+            <p>Acompanhe um pedido desde a visita do vendedor até a porta da loja.</p>
+            <span class="story-scroll-hint">Role a página para acompanhar</span>
           </div>
 
-          <div>
-            <strong>Varejo</strong>
-            <span>abastecimento com estratégia</span>
+          <div class="story-caption">
+            <h2>23 indústrias no celular do vendedor.</h2>
+            <p>Ele chega à sua loja com o portfólio inteiro na mão e monta o pedido junto com você.</p>
           </div>
 
-          <div>
-            <strong>Lógica</strong>
-            <span>o elo que conecta os dois lados</span>
+          <div class="story-caption">
+            <h2>Do celular direto para o caminhão.</h2>
+            <p>O pedido criado na loja segue para o nosso centro de distribuição, onde é separado e carregado.</p>
+          </div>
+
+          <div class="story-caption">
+            <h2>De Pouso Alegre até a sua porta.</h2>
+            <p>O caminhão sai carregado, com a rota definida e o seu endereço como destino.</p>
+          </div>
+
+          <div class="story-caption">
+            <h2 class="story-motto">O elo perfeito entre a indústria e o varejo.</h2>
+            <p>Dedicação no atendimento, rapidez na entrega e compromisso com cada cliente.</p>
+            <div class="story-actions">
+              <a href="#industrias" class="btn-primary">Conhecer indústrias</a>
+              <a href="https://wa.me/5535998524730?text=Ol%C3%A1,%20te%20encontrei%20pelo%20site%20da%20L%C3%B3gica%20Distribui%C3%A7%C3%A3o" target="_blank" class="btn-secondary">Falar com a equipe comercial</a>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="hero-visual-premium">
-        <div class="orbit orbit-orange"></div>
-        <div class="orbit orbit-purple"></div>
-        <div class="orbit orbit-green"></div>
+        <!-- Só no celular: faixa que mantém o texto legível quando o mapa
+             cobre a tela inteira. -->
+        <div class="story-scrim" aria-hidden="true"></div>
 
-        <div class="connection-card main-connection-card">
-          <span>O elo perfeito</span>
-          <h2>Indústria + Varejo</h2>
-          <p>
-            Uma operação pensada para fazer grandes marcas chegarem com força
-            ao ponto de venda.
-          </p>
+        <!-- Cena montada e animada por src/site/story.ts; é ilustração,
+             o conteúdo está nos textos acima. -->
+        <div class="story-scene" aria-hidden="true">
+
+          <div class="story-map">
+            <!-- Dois desenhos empilhados: o mapa (que nunca muda) e, por
+                 cima, a rota com o caminhão (que mudam a cada quadro). Em
+                 camadas separadas, animar a rota não redesenha o mapa. -->
+            <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+              <!-- O desenho passa dos limites do cartão (0 0 1000 620) de
+                   propósito: no celular o mapa cobre a tela inteira e o
+                   story.ts amplia o viewBox até onde aquela tela precisa.
+                   O que está desenhado vai de x -1200 a 2200 e de y -1900
+                   a 2200 (ARTE em story.ts). -->
+              <rect x="-1200" y="-1900" width="3400" height="4100" fill="#f3ecdf" />
+              <g fill="#d9e9be">
+                <rect x="214" y="134" width="192" height="112" rx="12" />
+                <rect x="654" y="414" width="192" height="112" rx="12" />
+                <rect x="-446" y="134" width="192" height="112" rx="12" />
+                <rect x="-6" y="-146" width="192" height="112" rx="12" />
+                <rect x="874" y="-286" width="192" height="112" rx="12" />
+                <rect x="214" y="-566" width="192" height="112" rx="12" />
+                <rect x="654" y="-706" width="192" height="112" rx="12" />
+                <rect x="434" y="-986" width="192" height="112" rx="12" />
+                <rect x="-6" y="-1126" width="192" height="112" rx="12" />
+                <rect x="874" y="-1266" width="192" height="112" rx="12" />
+                <rect x="214" y="-1546" width="192" height="112" rx="12" />
+                <rect x="654" y="-1686" width="192" height="112" rx="12" />
+                <rect x="-226" y="554" width="192" height="112" rx="12" />
+                <rect x="434" y="694" width="192" height="112" rx="12" />
+                <rect x="1094" y="274" width="192" height="112" rx="12" />
+                <rect x="1094" y="834" width="192" height="112" rx="12" />
+                <rect x="-6" y="1254" width="192" height="112" rx="12" />
+                <rect x="654" y="1394" width="192" height="112" rx="12" />
+              </g>
+              <path d="M-1200 330 C -800 300, -220 100, -20 70 C 180 40, 300 200, 520 190 S 860 330, 1020 300 S 1500 180, 2200 260" fill="none" stroke="#c9dfeb" stroke-width="30" />
+              <g fill="none" stroke="#ffffff" stroke-width="16">
+                <path d="M-1200 -1840H2200M-1200 -1700H2200M-1200 -1560H2200M-1200 -1420H2200M-1200 -1280H2200M-1200 -1140H2200M-1200 -1000H2200M-1200 -860H2200M-1200 -720H2200M-1200 -580H2200M-1200 -440H2200M-1200 -300H2200M-1200 -160H2200M-1200 -20H2200M-1200 120H2200M-1200 260H2200M-1200 400H2200M-1200 540H2200M-1200 680H2200M-1200 820H2200M-1200 960H2200M-1200 1100H2200M-1200 1240H2200M-1200 1380H2200M-1200 1520H2200M-1200 1660H2200M-1200 1800H2200M-1200 1940H2200M-1200 2080H2200" />
+                <path d="M-680 -1900V2200M-460 -1900V2200M-240 -1900V2200M-20 -1900V2200M200 -1900V2200M420 -1900V2200M640 -1900V2200M860 -1900V2200M1080 -1900V2200M1300 -1900V2200M1520 -1900V2200" />
+              </g>
+              <path class="story-route-ghost" d="M130 540 H396 Q420 540 420 516 V424 Q420 400 444 400 H616 Q640 400 640 376 V284 Q640 260 664 260 H836 Q860 260 860 236 V150" fill="none" stroke="#9f279b" stroke-opacity="0.35" stroke-linecap="round" />
+            </svg>
+            <svg class="story-map-rota" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="storyRouteGradient" gradientUnits="userSpaceOnUse" x1="130" y1="540" x2="860" y2="150">
+                  <stop offset="0" stop-color="#9f279b" />
+                  <stop offset="1" stop-color="#f5821f" />
+                </linearGradient>
+              </defs>
+              <path class="story-route" d="M130 540 H396 Q420 540 420 516 V424 Q420 400 444 400 H616 Q640 400 640 376 V284 Q640 260 664 260 H836 Q860 260 860 236 V150" fill="none" stroke="url(#storyRouteGradient)" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="130" cy="540" r="20" fill="#9f279b" stroke="#ffffff" stroke-width="6" />
+              <circle class="story-pulse" cx="860" cy="150" r="30" fill="#e5332a" fill-opacity="0.22" stroke="#e5332a" stroke-width="3" />
+              <g class="story-map-truck"><g class="story-map-truck-body">
+                <rect x="-34" y="-15" width="46" height="30" rx="5" fill="#ffffff" stroke="#24102a" stroke-width="3" />
+                <rect x="14" y="-13" width="20" height="26" rx="6" fill="#9f279b" stroke="#24102a" stroke-width="3" /></g>
+              </g>
+            </svg>
+            <div class="story-map-label is-cd">Centro de distribuição<small>Pouso Alegre, MG</small></div>
+            <div class="story-map-label is-store">Sua loja</div>
+            <div class="story-pin">
+              <svg viewBox="0 0 46 60" xmlns="http://www.w3.org/2000/svg">
+                <path d="M23 59 C 23 59 3 36 3 22 A 20 20 0 0 1 43 22 C 43 36 23 59 23 59 Z" fill="#e5332a" stroke="#ffffff" stroke-width="3" />
+                <circle cx="23" cy="22" r="8" fill="#ffffff" />
+              </svg>
+            </div>
+          </div>
+
+          <svg class="story-truck" viewBox="0 0 440 230" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="166" width="408" height="16" rx="7" fill="#120713" />
+            <rect x="10" y="18" width="272" height="152" rx="14" fill="#fbf7f1" />
+            <rect x="10" y="140" width="272" height="8" fill="#f5821f" />
+            <rect x="10" y="148" width="272" height="8" fill="#9f279b" />
+            <rect x="10" y="156" width="272" height="8" fill="#8cc63f" />
+            <image href="/assets/images/logo/logo-logica.png" x="44" y="22" width="204" height="116" preserveAspectRatio="xMidYMid meet" />
+            <path d="M292 62 h66 q15 0 23 13 l28 45 q7 11 7 24 v26 h-124 z" fill="#9f279b" />
+            <path d="M306 78 h49 q8 0 12 7 l20 33 h-81 z" fill="#f3d9f1" />
+            <rect x="408" y="146" width="12" height="13" rx="3" fill="#f5821f" />
+            <circle cx="92" cy="190" r="27" fill="#120713" />
+            <circle cx="92" cy="190" r="10" fill="#fbf7f1" />
+            <circle cx="352" cy="190" r="27" fill="#120713" />
+            <circle cx="352" cy="190" r="10" fill="#fbf7f1" />
+          </svg>
+
+          <div class="story-phone">
+            <div class="story-screen">
+              <div class="story-screen-title">Novo pedido</div>
+              <div class="story-screen-sub">Marcas escolhidas com o cliente</div>
+              <div class="story-tiles"></div>
+              <div class="story-count">Marcas no pedido <strong>0</strong></div>
+              <div class="story-order-button">
+                <span class="is-create">Criar pedido</span>
+                <span class="is-sent">Pedido enviado</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="story-parcel"></div>
+          <div class="story-parcel"></div>
+          <div class="story-parcel"></div>
+
+          <svg class="story-hand" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+            <rect x="46" y="214" width="124" height="110" rx="18" fill="#f5821f" />
+            <rect x="46" y="214" width="124" height="16" fill="#ffffff" fill-opacity="0.55" />
+            <g fill="#d79b6f" stroke="#8a5536" stroke-width="3" stroke-linejoin="round">
+              <rect x="8" y="128" width="38" height="92" rx="19" transform="rotate(-20 27 174)" />
+              <rect x="36" y="118" width="130" height="118" rx="42" />
+              <rect x="82" y="100" width="30" height="62" rx="15" />
+              <rect x="110" y="104" width="30" height="62" rx="15" />
+              <rect x="137" y="112" width="28" height="58" rx="14" />
+              <rect x="38" y="2" width="40" height="160" rx="20" />
+            </g>
+            <rect x="40" y="130" width="36" height="40" fill="#d79b6f" />
+            <rect x="46" y="8" width="24" height="24" rx="10" fill="#f0c9a8" />
+          </svg>
+
         </div>
 
-        <div class="mini-card mini-card-one">
-          <strong>Portfólio</strong>
-          <span>marcas selecionadas</span>
-        </div>
-
-        <div class="mini-card mini-card-two">
-          <strong>Giro</strong>
-          <span>produtos com demanda</span>
-        </div>
-
-        <div class="mini-card mini-card-three">
-          <strong>Presença</strong>
-          <span>varejo abastecido</span>
         </div>
       </div>
     </section>
@@ -154,7 +261,7 @@
 
         <button class="industry-card" data-brand="Melhor Bocado">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/melhor-bocado.png" alt="Melhor Bocado" />
+            <img src="assets/images/marcas/melhor-bocado.webp" alt="Melhor Bocado" />
           </div>
           <div class="industry-card-info">
             <strong>Melhor Bocado</strong>
@@ -164,7 +271,7 @@
 
         <button class="industry-card" data-brand="Dadinho">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/dadinho.png" alt="Dadinho" />
+            <img src="assets/images/marcas/dadinho.webp" alt="Dadinho" />
           </div>
           <div class="industry-card-info">
             <strong>Família Dadinho</strong>
@@ -174,7 +281,7 @@
 
         <button class="industry-card" data-brand="Santa Helena">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/santa-helena.png" alt="Santa Helena" />
+            <img src="assets/images/marcas/santa-helena.webp" alt="Santa Helena" />
           </div>
           <div class="industry-card-info">
             <strong>Santa Helena</strong>
@@ -184,7 +291,7 @@
 
         <button class="industry-card" data-brand="Erlan">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/erlan.png" alt="Erlan" />
+            <img src="assets/images/marcas/erlan.webp" alt="Erlan" />
           </div>
           <div class="industry-card-info">
             <strong>Erlan</strong>
@@ -194,7 +301,7 @@
 
         <button class="industry-card" data-brand="Ana Maria">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/ana-maria.png" alt="Ana Maria" />
+            <img src="assets/images/marcas/ana-maria.webp" alt="Ana Maria" />
           </div>
           <div class="industry-card-info">
             <strong>Ana Maria</strong>
@@ -204,7 +311,7 @@
 
         <button class="industry-card" data-brand="Bacio di Latte">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/bacio-di-latte.png" alt="Bacio di Latte" />
+            <img src="assets/images/marcas/bacio-di-latte.webp" alt="Bacio di Latte" />
           </div>
           <div class="industry-card-info">
             <strong>Bacio di Latte</strong>
@@ -214,7 +321,7 @@
 
         <button class="industry-card" data-brand="Bom Destino">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/bom-destino.png" alt="Bom Destino" />
+            <img src="assets/images/marcas/bom-destino.webp" alt="Bom Destino" />
           </div>
           <div class="industry-card-info">
             <strong>Bom Destino</strong>
@@ -224,7 +331,7 @@
 
         <button class="industry-card" data-brand="Crocantíssimo">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/crocantissimo.png" alt="Crocantíssimo" />
+            <img src="assets/images/marcas/crocantissimo.webp" alt="Crocantíssimo" />
           </div>
           <div class="industry-card-info">
             <strong>Crocantíssimo</strong>
@@ -234,7 +341,7 @@
 
         <button class="industry-card" data-brand="Da Terrinha">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/da-terrinha.png" alt="Da Terrinha" />
+            <img src="assets/images/marcas/da-terrinha.webp" alt="Da Terrinha" />
           </div>
           <div class="industry-card-info">
             <strong>Da Terrinha</strong>
@@ -244,7 +351,7 @@
 
         <button class="industry-card" data-brand="Danubio">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/danubio.png" alt="Danubio" />
+            <img src="assets/images/marcas/danubio.webp" alt="Danubio" />
           </div>
           <div class="industry-card-info">
             <strong>Danubio</strong>
@@ -254,7 +361,7 @@
 
         <button class="industry-card" data-brand="Faixa Azul">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/faixa-azul.png" alt="Faixa Azul" />
+            <img src="assets/images/marcas/faixa-azul.webp" alt="Faixa Azul" />
           </div>
           <div class="industry-card-info">
             <strong>Faixa Azul</strong>
@@ -264,7 +371,7 @@
 
         <button class="industry-card" data-brand="Froneri">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/froneri.png" alt="Froneri" />
+            <img src="assets/images/marcas/froneri.webp" alt="Froneri" />
           </div>
           <div class="industry-card-info">
             <strong>Froneri</strong>
@@ -274,7 +381,7 @@
 
         <button class="industry-card" data-brand="MUAI">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/muai.png" alt="MUAI" />
+            <img src="assets/images/marcas/muai.webp" alt="MUAI" />
           </div>
           <div class="industry-card-info">
             <strong>MUAI</strong>
@@ -284,7 +391,7 @@
 
         <button class="industry-card" data-brand="Nutrella">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/nutrella.png" alt="Nutrella" />
+            <img src="assets/images/marcas/nutrella.webp" alt="Nutrella" />
           </div>
           <div class="industry-card-info">
             <strong>Nutrella</strong>
@@ -294,7 +401,7 @@
 
         <button class="industry-card" data-brand="Pratic Leve">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/pratic-leve.png" alt="Pratic Leve" />
+            <img src="assets/images/marcas/pratic-leve.webp" alt="Pratic Leve" />
           </div>
           <div class="industry-card-info">
             <strong>Pratic Leve</strong>
@@ -304,7 +411,7 @@
 
         <button class="industry-card" data-brand="Pullman">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/pullman.png" alt="Pullman" />
+            <img src="assets/images/marcas/pullman.webp" alt="Pullman" />
           </div>
           <div class="industry-card-info">
             <strong>Pullman</strong>
@@ -314,7 +421,7 @@
 
         <button class="industry-card" data-brand="Rap10">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/rap10.png" alt="Rap10" />
+            <img src="assets/images/marcas/rap10.webp" alt="Rap10" />
           </div>
           <div class="industry-card-info">
             <strong>Rap10</strong>
@@ -324,7 +431,7 @@
 
         <button class="industry-card" data-brand="Reserva One">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/reserva-one.png" alt="Reserva One" />
+            <img src="assets/images/marcas/reserva-one.webp" alt="Reserva One" />
           </div>
           <div class="industry-card-info">
             <strong>Reserva One</strong>
@@ -334,7 +441,7 @@
 
         <button class="industry-card" data-brand="Shamara">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/shamara.png" alt="Shamara" />
+            <img src="assets/images/marcas/shamara.webp" alt="Shamara" />
           </div>
           <div class="industry-card-info">
             <strong>Shamara</strong>
@@ -344,7 +451,7 @@
 
         <button class="industry-card" data-brand="Spres">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/spres.png" alt="Spres" />
+            <img src="assets/images/marcas/spres.webp" alt="Spres" />
           </div>
           <div class="industry-card-info">
             <strong>Spres</strong>
@@ -354,7 +461,7 @@
 
         <button class="industry-card" data-brand="Verde Campo">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/verde-campo.png" alt="Verde Campo" />
+            <img src="assets/images/marcas/verde-campo.webp" alt="Verde Campo" />
           </div>
           <div class="industry-card-info">
             <strong>Verde Campo</strong>
@@ -364,7 +471,7 @@
 
         <button class="industry-card" data-brand="Vigor">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/vigor.png" alt="Vigor" />
+            <img src="assets/images/marcas/vigor.webp" alt="Vigor" />
           </div>
           <div class="industry-card-info">
             <strong>Vigor</strong>
@@ -374,7 +481,7 @@
 
         <button class="industry-card" data-brand="Vovó Clara">
           <div class="industry-card-media">
-            <img src="assets/images/marcas/vovo-clara.png" alt="Vovó Clara" />
+            <img src="assets/images/marcas/vovo-clara.webp" alt="Vovó Clara" />
           </div>
           <div class="industry-card-info">
             <strong>Vovó Clara</strong>
@@ -399,7 +506,7 @@
 
           <div class="catalog-side">
             <div class="catalog-badge" id="catalogCount">0 páginas</div>
-            <a href="https://w.app/rxsu0a" target="_blank" class="btn-secondary">
+            <a href="https://wa.me/5535998524730?text=Ol%C3%A1,%20te%20encontrei%20pelo%20site%20da%20L%C3%B3gica%20Distribui%C3%A7%C3%A3o" target="_blank" class="btn-secondary">
               Solicitar catálogo completo
             </a>
           </div>
@@ -458,7 +565,7 @@
             para o seu negócio.
           </p>
 
-          <a href="https://w.app/rxsu0a" target="_blank" class="btn-primary">
+          <a href="https://wa.me/5535998524730?text=Ol%C3%A1,%20te%20encontrei%20pelo%20site%20da%20L%C3%B3gica%20Distribui%C3%A7%C3%A3o" target="_blank" class="btn-primary">
             Falar com o Comercial
           </a>
         </article>
@@ -607,6 +714,7 @@
     </div>
   </div>
 
-  <script type="module" src="assets/js/script.js"></script>
+  <script type="module" src="/assets/js/script.js"></script>
+  <script type="module" src="/src/site/story.ts"></script>
 </body>
-</html>
+</html>

@@ -1,0 +1,1965 @@
+/* Navegação dentro do palco da história (ver src/site/palco.ts).
+   Só vale com body.palco-ativo, que o palco.ts liga depois de mover o
+   conteúdo das seções para cá. Sem JS ou com movimento reduzido, nada
+   aqui se aplica e as seções continuam no fluxo da página.
+
+   As regras de componentes que já existem no style.css (cartões de
+   indústria, carrossel, cartões de contato e de endereço) são ajustadas
+   com o prefixo .palco, sem tocar nas originais.
+
+   Sobre suavidade: o palco só anima transform e opacity, e tudo o que ele
+   move tem camada própria (will-change, no bloco "CAMADAS" abaixo). Com a
+   camada já criada, mover ou esmaecer não repinta nada. */
+
+/* As seções de origem ficam vazias: o conteúdo mora no palco. */
+body.palco-ativo #industrias,
+body.palco-ativo #catalogo,
+body.palco-ativo #sobre,
+body.palco-ativo #contato {
+  display: none;
+}
+
+/* O desfoque do cabeçalho, refeito a cada quadro sobre o palco em
+   movimento, é o efeito mais caro da página em aparelhos de toque. */
+@media (max-width: 860px), (pointer: coarse) {
+  body.palco-ativo .header {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.98);
+  }
+}
+
+.palco {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  --palco-topo: 92px;
+  --palco-pe: 88px;
+}
+
+.palco .eyebrow {
+  display: none;
+}
+
+/* Clicar no menu no meio da história: o que está na tela some antes de a
+   história ir, por baixo do pano, para o último quadro. */
+.story-stage.is-saindo .story-quadro > * {
+  opacity: 0 !important;
+  transition: opacity 0.2s ease;
+}
+
+/* CAMADAS. Só depois que a história termina (.is-vivo, palco.ts): antes
+   disso o palco está parado e cada camada a mais pesaria no scroll da
+   história. */
+
+.palco.is-vivo .palco-foco,
+.palco.is-vivo .palco-chao,
+.palco.is-vivo .palco-marco,
+.palco.is-vivo .palco-poste,
+.palco.is-vivo .palco-rota-caminhao {
+  will-change: transform;
+}
+
+.palco.is-vivo .palco-marco-corpo,
+.palco.is-vivo .palco-grupo,
+.palco.is-vivo .palco-texto,
+.palco.is-vivo .palco-texto > *,
+.palco.is-vivo .palco-prateleira-sombra,
+.palco.is-vivo .industry-card,
+.palco.is-vivo .palco-vaga,
+.palco.is-vivo .palco-dica,
+.palco.is-vivo .palco-assinatura,
+.palco.is-vivo .palco-sala[data-sala="catalogo"] .palco-cena {
+  will-change: transform, opacity;
+}
+
+/* Por alguns quadros, logo que a história termina (palco.ts): a primeira
+   sala é desenhada quase invisível, para as camadas dela já estarem
+   pintadas quando o primeiro voo chegar. */
+.palco.is-aquecendo .palco-grupo {
+  visibility: visible !important;
+  opacity: 0.002 !important;
+}
+
+.palco.is-aquecendo .palco-sala[data-sala="industrias"],
+.palco.is-aquecendo .palco-sala[data-sala="industrias"] * {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* MUNDO: o mapa como chão, visto pela câmera */
+
+.palco-mundo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* O ponto da tela para onde a câmera olha. A perspectiva mora aqui e
+   anda junto: mover o foco é só um translate. */
+.palco-foco {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  perspective: 1100px;
+  perspective-origin: 0 0;
+}
+
+/* Névoa no horizonte e sombra atrás da coluna de texto. */
+.palco-mundo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, var(--plum) 4%, rgba(36, 16, 42, 0) 34%),
+    linear-gradient(to right, rgba(36, 16, 42, 0.94) 0, rgba(36, 16, 42, 0.8) 32%, rgba(36, 16, 42, 0) 52%);
+}
+
+/* O chão é um canvas pintado uma vez (palco.ts); a câmera é o transform
+   deste elemento. Nada é redesenhado durante o movimento. */
+.palco-chao {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.palco-chao-arte {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.palco-trilhas {
+  position: absolute;
+  overflow: visible;
+}
+
+.palco-trilha {
+  fill: none;
+  stroke-width: 9px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Marcos: o que fica em pé no mapa (CD, fábrica, lojas, cartões). Numa
+   camada plana acima da névoa; o palco.ts põe cada um no ponto da tela
+   onde está o seu lugar, sempre do mesmo tamanho e de frente. */
+
+.palco-marcos {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.palco-marco {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+.palco-marco-corpo {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* A caixa fica acima do ponto (--sobe) e centrada nele; --ancora diz em
+   que altura da largura está a ponta (50 = no meio). */
+.palco-marco-caixa {
+  position: absolute;
+  left: 0;
+  bottom: var(--sobe, 0px);
+  translate: calc(var(--ancora, 50) * -1%) 0;
+}
+
+/* Sem filter nos desenhos: a sombra já vem desenhada no próprio SVG. */
+.palco-marco-caixa > svg {
+  display: block;
+}
+
+/* Cartões presos aos lugares: acima do desenho do lugar, com a ponta
+   apontando para ele. */
+
+.palco-marco.is-cartao .palco-marco-caixa {
+  --sobe: 84px;
+  width: 232px;
+  pointer-events: auto;
+}
+
+.palco-marco.is-cartao .palco-marco-caixa > * {
+  position: relative;
+  border-radius: 16px;
+  background: var(--paper);
+  color: #2b202a;
+  box-shadow: 0 22px 44px rgba(8, 2, 10, 0.42);
+}
+
+.palco-marco.is-cartao .palco-marco-caixa > *::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--ancora, 50) * 1%);
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: var(--paper);
+  transform: rotate(45deg);
+  border-radius: 0 0 3px 0;
+}
+
+.palco-cartao-sobre {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px 15px;
+}
+
+.palco-cartao-sobre strong {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--plum);
+}
+
+.palco-cartao-sobre span {
+  font-size: 13px;
+  line-height: 1.42;
+  font-weight: 600;
+  color: #6c5d6b;
+}
+
+/* Endereços (cartões do style.css, aqui compactos e sem o mapa embutido:
+   o lugar já está no mapa do palco). */
+
+.palco-marco.is-endereco .palco-marco-caixa {
+  --sobe: 100px;
+  width: 262px;
+}
+
+.palco .location-card {
+  padding: 15px 17px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--paper);
+  backdrop-filter: none;
+  box-shadow: 0 22px 44px rgba(8, 2, 10, 0.42);
+}
+
+.palco .location-card > span {
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.palco .location-card h3 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.palco .location-card p {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.palco .map-embed-wrapper {
+  height: auto;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.palco .map-embed-wrapper:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.palco .map-embed-frame {
+  display: none;
+}
+
+.palco .map-embed-cta {
+  position: static;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 0;
+  border: 0;
+  background: var(--plum);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+  transition: background 0.2s ease;
+}
+
+.palco .map-embed-wrapper:hover .map-embed-cta {
+  background: var(--purple);
+}
+
+.palco .map-embed-wrapper:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+/* SALAS: texto à esquerda, cena à direita (mesma divisão da história) */
+
+.palco-grupo {
+  position: absolute;
+  inset: 0;
+}
+
+.palco-sala {
+  position: absolute;
+  inset: var(--palco-topo) 0 0 0;
+}
+
+.palco-texto {
+  position: absolute;
+  left: 6%;
+  width: 34%;
+  top: 0;
+  bottom: var(--palco-pe);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  /* Só rola se o texto não couber (janelas muito baixas). */
+  overflow-y: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+
+.palco-texto::-webkit-scrollbar {
+  display: none;
+}
+
+.palco-texto > * {
+}
+
+.palco-texto > :first-child {
+  margin-top: auto;
+}
+
+.palco-texto > :last-child {
+  margin-bottom: auto;
+}
+
+.palco-cena {
+  position: absolute;
+  left: 42%;
+  right: 3%;
+  top: 0;
+  bottom: var(--palco-pe);
+}
+
+/* A letra acompanha também a altura da janela (notebooks). */
+.palco-texto h2 {
+  font-size: clamp(25px, min(3.2vw, 6.2vh), 52px);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  color: var(--paper);
+  text-wrap: balance;
+}
+
+/* O título de cada seção recebe o foco quando se chega nela pelo menu ou
+   pelo teclado (palco.ts); no Início é o título do último quadro da
+   história. O contorno só aparece para quem navega pelo teclado. */
+.palco-texto h2:focus,
+body.palco-ativo .story-caption h2:focus {
+  outline: none;
+}
+
+.palco-texto h2:focus-visible,
+body.palco-ativo .story-caption h2:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 6px;
+}
+
+.palco-texto p {
+  margin-top: clamp(10px, 2.2vh, 18px);
+  max-width: 42ch;
+  font-size: clamp(14px, min(1.15vw, 2.4vh), 18px);
+  line-height: 1.58;
+  font-weight: 500;
+  color: rgba(251, 247, 241, 0.74);
+}
+
+/* Indústrias: porta-paletes do CD, cada marca uma caixa */
+
+.palco-sala[data-sala="industrias"] .palco-cena {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 1500px;
+}
+
+/* A largura acompanha a altura que sobra, para as quatro fileiras
+   caberem em janelas baixas (notebook). A conta: a altura da prateleira é
+   0,5867 x (largura - 120px) + três vãos + 53px; resolvida para a largura
+   dá o calc abaixo (1,704 = 1 / 0,5867). */
+.palco-prateleira {
+  --vao: clamp(16px, 3.6vh, 30px);
+  position: relative;
+  width: min(100%, 790px, calc((100vh - var(--palco-topo) - var(--palco-pe) - 101px - 3 * var(--vao)) * 1.704 + 120px));
+  width: min(100%, 790px, calc((100dvh - var(--palco-topo) - var(--palco-pe) - 101px - 3 * var(--vao)) * 1.704 + 120px));
+  padding: 22px 30px 0;
+  /* A prateleira é um plano só, inclinado (sem preserve-3d): com cada
+     caixa num plano 3D próprio o Chrome entregava o clique à grade, e
+     não ao botão da marca. */
+  transform: rotateY(-11deg) rotateX(3deg);
+  pointer-events: auto;
+}
+
+/* sombra no chão (cresce junto com os postes) */
+.palco-prateleira-sombra {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: -34px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(8, 2, 10, 0.55), transparent);
+}
+
+.palco-poste {
+  position: absolute;
+  top: 0;
+  bottom: -22px;
+  width: 16px;
+  border-radius: 4px 4px 2px 2px;
+  transform-origin: 50% 100%;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 12px, rgba(18, 7, 19, 0.55) 12px 17px) 50% 0 / 5px 100% no-repeat,
+    linear-gradient(to right, #7a3a83, #5b2a63);
+  box-shadow: 0 0 0 1px rgba(18, 7, 19, 0.4);
+}
+
+.palco-poste.is-esq {
+  left: 6px;
+}
+
+.palco-poste.is-dir {
+  right: 6px;
+}
+
+.palco .industry-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  column-gap: 12px;
+  row-gap: var(--vao);
+  padding-bottom: 9px;
+}
+
+.palco .industry-card,
+.palco-vaga {
+  position: relative;
+  aspect-ratio: 1 / 0.88;
+  min-height: 0;
+}
+
+.palco .industry-card {
+  padding: 0;
+  border: 0;
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(to bottom, #e3a866, #cf8a44);
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(92, 46, 10, 0.28),
+    inset 0 -5px 0 rgba(92, 46, 10, 0.12),
+    0 8px 14px -4px rgba(8, 2, 10, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+  transition: transform 0.25s cubic-bezier(.2, .9, .3, 1.2), box-shadow 0.25s ease;
+}
+
+/* fita na aba da caixa */
+.palco .industry-card::before {
+  content: "";
+  position: absolute;
+  left: 41%;
+  width: 18%;
+  top: 0;
+  height: 17%;
+  background: rgba(255, 238, 210, 0.42);
+}
+
+/* a viga da prateleira, emendando com a das caixas vizinhas */
+.palco .industry-card::after,
+.palco-vaga::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: -10px;
+  height: 9px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, #f79a45, #e06d10);
+  box-shadow: 0 3px 6px rgba(8, 2, 10, 0.35);
+}
+
+/* Levantar a caixa da viga só onde há mouse: no toque o "hover" fica
+   preso depois do toque. A viga (::after) desce o mesmo tanto e parece
+   ficar parada. */
+@media (hover: hover) {
+  .palco .industry-card:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      inset 0 0 0 1px rgba(92, 46, 10, 0.28),
+      inset 0 -5px 0 rgba(92, 46, 10, 0.12),
+      0 22px 26px -8px rgba(8, 2, 10, 0.6);
+  }
+
+  .palco .industry-card:hover::after {
+    transform: translateY(6px);
+  }
+}
+
+@media (hover: none) {
+  .palco .industry-card:hover {
+    transform: none;
+    box-shadow:
+      inset 0 0 0 1px rgba(92, 46, 10, 0.28),
+      inset 0 -5px 0 rgba(92, 46, 10, 0.12),
+      0 8px 14px -4px rgba(8, 2, 10, 0.55);
+  }
+
+  .palco .industry-card:active {
+    transform: scale(0.96);
+  }
+}
+
+.palco .industry-card:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+.palco .industry-card.active {
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    0 8px 14px -4px rgba(8, 2, 10, 0.55);
+}
+
+.palco .industry-card-media {
+  width: 78%;
+  height: 46%;
+  min-height: 0;
+  margin-top: 10%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(92, 46, 10, 0.3);
+}
+
+.palco .industry-card img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.palco .industry-card:hover img {
+  transform: none;
+}
+
+.palco .industry-card-info {
+  width: 92%;
+  margin-top: 7%;
+  gap: 0;
+}
+
+.palco .industry-card-info strong {
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #4a2810;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* "Ver catálogo" continua no nome do botão para leitores de tela. */
+.palco .industry-card-info span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Só aparece onde a prateleira desliza de lado (celular). */
+.palco-dica {
+  display: none;
+}
+
+/* Catálogo */
+
+.palco-voltar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 8px 14px 8px 10px;
+  border: 1px solid rgba(251, 247, 241, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(251, 247, 241, 0.82);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.palco-voltar:hover {
+  background: rgba(251, 247, 241, 0.08);
+  color: var(--paper);
+}
+
+.palco-voltar:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+.palco .catalog-head {
+  display: block;
+}
+
+.palco .catalog-side {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.palco .catalog-badge {
+  min-height: 38px;
+  padding: 0 16px;
+  background: rgba(251, 247, 241, 0.08);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.palco .catalog-side .btn-secondary {
+  min-height: 46px;
+  padding: 0 20px;
+  font-size: 14px;
+  color: var(--paper);
+  border-color: rgba(251, 247, 241, 0.34);
+  background: rgba(251, 247, 241, 0.06);
+}
+
+/* As páginas ocupam a altura que a cena tiver, em qualquer tela: do
+   carrossel até a imagem, cada nível preenche o de cima. */
+
+.palco-sala[data-sala="catalogo"] .palco-cena {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.palco #productGrid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 700px;
+  max-height: 780px;
+  margin: auto 0;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.palco .catalog-carousel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 14px 62px 56px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--paper);
+  backdrop-filter: none;
+  box-shadow: 0 30px 60px rgba(8, 2, 10, 0.5);
+}
+
+.palco .catalog-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 14px;
+}
+
+.palco .catalog-track,
+.palco .catalog-slide {
+  height: 100%;
+}
+
+.palco .catalog-page-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.palco .catalog-page-button {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px;
+}
+
+.palco .catalog-page-button img {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.palco .catalog-page-info {
+  display: none;
+}
+
+.palco .catalog-arrow {
+  width: 44px;
+  height: 44px;
+  font-size: 26px;
+  border: 0;
+  background: var(--plum);
+  color: var(--paper);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.palco .catalog-arrow.prev {
+  left: 10px;
+}
+
+.palco .catalog-arrow.next {
+  right: 10px;
+}
+
+.palco .catalog-arrow:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+.palco .catalog-counter {
+  bottom: 13px;
+  min-height: 32px;
+  background: transparent;
+  color: #6c5d6b;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.palco .catalog-swipe-hint {
+  display: none;
+}
+
+.palco .catalog-empty-state {
+  min-height: 300px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 0 30px 60px rgba(8, 2, 10, 0.5);
+}
+
+.palco .catalog-empty-state span {
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* A etiqueta da marca saindo da prateleira (palco.ts cria e remove). */
+.palco-fantasma {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(8, 2, 10, 0.45);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.palco-fantasma img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Contato: canais na coluna de texto */
+
+.palco .contact-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: none;
+  margin: clamp(14px, 3.4vh, 28px) 0 0;
+}
+
+.palco .contact-card {
+  min-height: 0;
+  padding: 16px 16px 16px 20px;
+  border: 1px solid rgba(251, 247, 241, 0.14);
+  border-radius: 18px;
+  background: rgba(251, 247, 241, 0.06);
+  backdrop-filter: none;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 18px;
+  align-items: center;
+}
+
+.palco .contact-card span {
+  grid-column: 1;
+  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgba(251, 247, 241, 0.6);
+}
+
+.palco .contact-card h3 {
+  grid-column: 1;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--paper);
+}
+
+.palco .contact-card p {
+  grid-column: 1;
+  margin-top: 5px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(251, 247, 241, 0.66);
+}
+
+.palco .contact-card .btn-primary,
+.palco .contact-card .btn-secondary {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  width: auto;
+  min-height: 46px;
+  margin-top: 0;
+  padding: 0 20px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.palco .contact-card a:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+/* BARRA DE PARADAS: o site como uma rota, o caminhão marca onde você está */
+
+.palco-rota {
+  position: absolute;
+  z-index: 8;
+  left: 6%;
+  bottom: 22px;
+  width: min(440px, 34%);
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.story.is-concluida .palco-rota,
+.palco.is-aberto .palco-rota {
+  opacity: 1;
+  visibility: visible;
+}
+
+.palco-rota ol {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* a estrada entre a primeira e a última parada */
+.palco-rota ol::before {
+  content: "";
+  position: absolute;
+  left: 12.5%;
+  right: 12.5%;
+  top: 27px;
+  height: 2px;
+  background: repeating-linear-gradient(to right, rgba(251, 247, 241, 0.35) 0 8px, transparent 8px 14px);
+}
+
+.palco-rota a {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 21px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(251, 247, 241, 0.62);
+  transition: color 0.2s ease;
+}
+
+.palco-rota a:hover,
+.palco-rota a[aria-current] {
+  color: var(--paper);
+}
+
+.palco-rota a:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.palco-parada {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--plum);
+  border: 2px solid rgba(251, 247, 241, 0.55);
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.palco-rota a[aria-current] .palco-parada {
+  background: var(--orange);
+  border-color: var(--orange);
+  transform: scale(1.15);
+}
+
+/* O caminhão anda pela barra junto com o palco (palco.ts). */
+.palco-rota-caminhao {
+  position: absolute;
+  top: 0;
+  left: -17px;
+  width: 34px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.palco-rota-caminhao svg {
+  display: block;
+}
+
+/* Próxima parada: o que o próximo scroll faz. Mesmo traço do aviso de
+   rolagem da abertura da história. */
+
+.palco-proximo {
+  position: absolute;
+  z-index: 8;
+  right: 3%;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 9px 16px 9px 14px;
+  border-radius: 999px;
+  /* fundo próprio: nas salas o chão claro passa por trás */
+  background: rgba(36, 16, 42, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(251, 247, 241, 0.66);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.palco-proximo::before {
+  content: "";
+  width: 2px;
+  height: 18px;
+  border-radius: 2px;
+  background: linear-gradient(var(--orange), transparent);
+}
+
+.palco-proximo strong {
+  color: var(--paper);
+}
+
+.story.is-concluida .palco-proximo,
+.palco.is-aberto .palco-proximo {
+  opacity: 1;
+  visibility: visible;
+}
+
+.palco-proximo[hidden] {
+  display: none;
+}
+
+/* Sem mouse não se "rola": quem guia é a barra de paradas. */
+@media (pointer: coarse) {
+  .palco-proximo {
+    display: none;
+  }
+}
+
+/* ASSINATURA: as redes sociais e os direitos. É o rodapé do site
+   (.footer, do style.css), que o palco.ts traz para dentro da parada do
+   Contato; a página não tem mais rodapé abaixo do palco. Fica no canto de
+   baixo, onde nas outras paradas está o aviso "Role para seguir": aqui
+   não há mais para onde seguir. */
+
+.palco .footer {
+  position: absolute;
+  z-index: 8;
+  right: 3%;
+  bottom: 22px;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
+  /* a barra de paradas, à esquerda, vai até 40% da largura */
+  max-width: 54%;
+  padding: 7px 20px 7px 8px;
+  border-radius: 28px;
+  background: rgba(36, 16, 42, 0.92);
+  color: rgba(251, 247, 241, 0.72);
+  text-align: left;
+  pointer-events: auto;
+}
+
+.palco .footer-social {
+  order: 1;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 6px;
+  max-width: none;
+}
+
+.palco .footer-brand {
+  order: 2;
+  display: block;
+  min-width: 0;
+}
+
+/* O logo já está no cabeçalho, logo acima. */
+.palco .footer-brand img {
+  display: none;
+}
+
+.palco .footer-brand p {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.32;
+  text-wrap: balance;
+}
+
+/* "Siga a Lógica Distribuição nas redes sociais": continua valendo para
+   leitores de tela; à vista, os quatro ícones já dizem isso. */
+.palco .footer-social-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.palco .footer-social-link {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(251, 247, 241, 0.26);
+  color: var(--paper);
+}
+
+.palco .footer-social-link:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Menu do cabeçalho: a seção aberta fica marcada. */
+
+body.palco-ativo .nav a[aria-current] {
+  color: var(--purple);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 7px;
+}
+
+body.palco-ativo .mobile-nav a[aria-current] {
+  color: var(--purple);
+}
+
+/* COLUNA DE TEXTO ESTREITA (tablet deitado, janela reduzida): com o botão
+   ao lado, o título de cada canal quebrava em cinco ou seis linhas e o
+   segundo canal saía da tela. O botão desce para baixo do título e o
+   texto de apoio cede o lugar. */
+
+@media (min-width: 861px) and (max-width: 1180px) {
+  .palco .contact-options {
+    gap: 10px;
+  }
+
+  .palco .contact-card {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 16px;
+  }
+
+  .palco .contact-card p {
+    display: none;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    min-height: 42px;
+    margin-top: 10px;
+  }
+}
+
+/* O mesmo, em janelas também baixas: sai a frase de abertura. */
+@media (min-width: 861px) and (max-width: 1180px) and (max-height: 700px) {
+  .palco-sala[data-sala="contato"] .palco-texto > p {
+    display: none;
+  }
+
+  .palco .contact-card {
+    padding: 11px 14px 13px;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    min-height: 40px;
+    margin-top: 8px;
+  }
+}
+
+/* O texto de apoio de cada canal só aparece quando sobra altura: abaixo
+   de 840px ele fazia a coluna transbordar (medido de 1181 a 1536px de
+   largura, entre 721 e 800px de altura). */
+@media (orientation: landscape) and (max-height: 840px) {
+  .palco .contact-card p {
+    display: none;
+  }
+}
+
+/* Mais baixo ainda, sai também a frase de abertura do Contato. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .palco-sala[data-sala="contato"] .palco-texto > p {
+    display: none;
+  }
+}
+
+/* JANELAS BAIXAS, deitadas (notebook pequeno, tablet e celular deitados):
+   o mesmo desenho das telas largas, mais compacto. */
+
+@media (orientation: landscape) and (max-height: 720px) {
+  .palco .contact-card {
+    padding: 12px 14px 12px 18px;
+  }
+
+  .palco .contact-card p {
+    display: none;
+  }
+
+  .palco .location-card {
+    padding: 12px 14px 13px;
+  }
+
+  .palco-marco.is-endereco .palco-marco-caixa {
+    --sobe: 82px;
+    width: 236px;
+  }
+
+  .palco .location-card h3 {
+    font-size: 17px;
+  }
+
+  .palco-marco.is-glifo .palco-marco-caixa > svg {
+    scale: 0.82;
+    transform-origin: 50% 100%;
+  }
+}
+
+/* Coluna estreita e janela baixa ao mesmo tempo: os canais mais juntos. */
+@media (min-width: 861px) and (max-width: 1180px) and (max-height: 600px) {
+  .palco .contact-options {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .palco .contact-card {
+    padding: 9px 12px 11px;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    min-height: 36px;
+    margin-top: 6px;
+  }
+}
+
+/* Celular deitado: quase não há altura. O texto encolhe, a prateleira
+   vira o corredor de duas fileiras e a barra de paradas fica numa linha. */
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .palco {
+    --palco-pe: 52px;
+  }
+
+  .palco-texto {
+    padding: 8px 0;
+  }
+
+  .palco-texto h2 {
+    font-size: clamp(18px, 6.4vh, 26px);
+  }
+
+  .palco-texto p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .palco-sala[data-sala="industrias"] .palco-cena {
+    perspective: none;
+  }
+
+  .palco-prateleira {
+    width: 100%;
+    padding: 12px 18px 0;
+    transform: none;
+  }
+
+  .palco-poste {
+    width: 10px;
+    bottom: -8px;
+  }
+
+  .palco-poste.is-esq {
+    left: 2px;
+  }
+
+  .palco-poste.is-dir {
+    right: 2px;
+  }
+
+  .palco-prateleira-sombra {
+    display: none;
+  }
+
+  .palco .industry-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: clamp(58px, 17vh, 84px);
+    column-gap: 8px;
+    row-gap: 20px;
+    padding: 6px 4px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .palco .industry-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .palco .industry-card-info strong {
+    font-size: 9.5px;
+  }
+
+  .palco .industry-card::after,
+  .palco-vaga::after {
+    left: -4px;
+    right: -4px;
+    bottom: -8px;
+    height: 6px;
+  }
+
+  .palco-voltar {
+    margin-bottom: 8px;
+    padding: 5px 12px 5px 8px;
+    font-size: 13px;
+  }
+
+  .palco .catalog-side {
+    margin-top: 10px;
+  }
+
+  .palco .catalog-side .btn-secondary,
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .palco .catalog-badge {
+    min-height: 32px;
+  }
+
+  .palco-sala[data-sala="catalogo"] .palco-cena {
+    padding: 4px 0;
+  }
+
+  .palco .catalog-carousel {
+    padding: 8px 54px 8px;
+    border-radius: 16px;
+  }
+
+  .palco .catalog-counter {
+    display: none;
+  }
+
+  /* Canais: sem altura para os cartões, ficam só os dois botões, um
+     sobre o outro. O nome de cada botão já diz com quem se fala; os
+     títulos continuam valendo para leitores de tela. */
+  .palco .contact-options {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .palco .contact-card {
+    display: block;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .palco .contact-card span,
+  .palco-sala[data-sala="contato"] .palco-texto > p {
+    display: none;
+  }
+
+  .palco .contact-card h3 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  /* Sem altura para os três cartões inteiros: ficam só os títulos, perto
+     dos seus lugares. */
+  .palco-marco.is-cartao .palco-marco-caixa {
+    --sobe: 44px;
+    width: max-content;
+  }
+
+  .palco-marco.is-endereco .palco-marco-caixa {
+    --sobe: 64px;
+    width: 204px;
+  }
+
+  .palco-cartao-sobre {
+    padding: 7px 11px 8px;
+    gap: 2px;
+  }
+
+  .palco-cartao-sobre strong {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .palco-cartao-sobre span {
+    display: none;
+  }
+
+  .palco .location-card {
+    padding: 8px 10px 9px;
+  }
+
+  .palco .location-card > span {
+    display: none;
+  }
+
+  .palco .location-card h3 {
+    font-size: 14px;
+  }
+
+  .palco .location-card p {
+    margin-top: 3px;
+    font-size: 11.5px;
+    line-height: 1.3;
+  }
+
+  .palco .map-embed-wrapper {
+    margin-top: 6px;
+  }
+
+  .palco .map-embed-cta {
+    min-height: 30px;
+    font-size: 12px;
+  }
+
+  .palco-marco.is-glifo .palco-marco-caixa > svg {
+    scale: 0.62;
+  }
+
+  .palco-rota {
+    bottom: 8px;
+    width: min(400px, 46%);
+  }
+
+  .palco-rota a {
+    gap: 4px;
+    padding-top: 17px;
+    font-size: 12px;
+  }
+
+  .palco-rota ol::before {
+    top: 22px;
+  }
+
+  .palco-parada {
+    width: 11px;
+    height: 11px;
+  }
+
+  .palco-rota-caminhao {
+    top: -1px;
+  }
+
+  .palco-proximo {
+    display: none;
+  }
+
+  /* A barra de paradas vai até 52% da largura; a assinatura fica com o
+     resto, em letra menor. */
+  .palco .footer {
+    bottom: 5px;
+    gap: 9px;
+    max-width: 42%;
+    padding: 5px 13px 5px 6px;
+    border-radius: 20px;
+  }
+
+  .palco .footer-social {
+    gap: 4px;
+  }
+
+  .palco .footer-social-link {
+    width: 30px;
+    height: 30px;
+  }
+
+  .palco .footer-social-link svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .palco .footer-brand p {
+    font-size: 10.5px;
+    line-height: 1.25;
+  }
+}
+
+/* CELULAR (tela estreita, em pé). Nada rola dentro das salas: cada
+   parada cabe na tela, o texto em cima e a cena embaixo. Sobre e Contato
+   têm dois tempos (palco.ts): o texto, depois o mapa em tela cheia. */
+
+@media (max-width: 860px) and (orientation: portrait) {
+  .palco {
+    --palco-topo: 84px;
+    --palco-pe: 88px;
+  }
+
+  .palco-mundo::after {
+    background: linear-gradient(to bottom, var(--plum) 5%, rgba(36, 16, 42, 0) 28%);
+  }
+
+  .palco-sala {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: var(--palco-pe);
+    /* Só entra em ação se uma parada não couber (telas muito baixas). */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .palco-sala::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A faixa escura atrás do texto faz parte dele: some junto. */
+  .palco-texto {
+    position: relative;
+    left: auto;
+    width: auto;
+    top: auto;
+    bottom: auto;
+    flex: 0 0 auto;
+    display: block;
+    padding: 18px 6% 34px;
+    overflow: visible;
+    background: linear-gradient(to bottom, var(--plum) calc(100% - 34px), rgba(36, 16, 42, 0));
+  }
+
+  .palco-texto > :first-child {
+    margin-top: 0;
+  }
+
+  .palco-texto > :last-child {
+    margin-bottom: 0;
+  }
+
+  .palco-cena {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .palco-texto h2 {
+    font-size: clamp(24px, 7vw, 38px);
+  }
+
+  .palco-texto p {
+    margin-top: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Indústrias: a prateleira vira um corredor que desliza de lado, com
+     os postes parados e as caixas passando entre eles. */
+
+  .palco-sala[data-sala="industrias"] .palco-cena {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding-bottom: 4px;
+    perspective: none;
+  }
+
+  .palco-prateleira {
+    width: 100%;
+    padding: 6px 16px 0;
+    transform: none;
+  }
+
+  .palco-poste {
+    width: 12px;
+    bottom: -14px;
+  }
+
+  .palco-poste.is-esq {
+    left: 2px;
+  }
+
+  .palco-poste.is-dir {
+    right: 2px;
+  }
+
+  .palco-prateleira-sombra {
+    bottom: -26px;
+  }
+
+  .palco .industry-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-columns: clamp(82px, 23.5vw, 118px);
+    column-gap: 10px;
+    row-gap: 27px;
+    padding: 16px 6px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* De lado quem rola é o navegador; para cima e para baixo é o palco. */
+    touch-action: pan-x;
+  }
+
+  .palco .industry-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .palco .industry-card,
+  .palco-vaga {
+    scroll-snap-align: start;
+  }
+
+  .palco .industry-card::after,
+  .palco-vaga::after {
+    left: -5px;
+    right: -5px;
+  }
+
+  .palco .industry-card-info strong {
+    font-size: 10.5px;
+  }
+
+  /* Com fundo próprio: atrás dela passa o chão claro do mapa. */
+  .palco-dica {
+    display: block;
+    align-self: center;
+    margin: 24px 0 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(36, 16, 42, 0.88);
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(251, 247, 241, 0.78);
+  }
+
+  /* Catálogo */
+
+  .palco-voltar {
+    margin-bottom: 12px;
+    padding: 7px 13px 7px 9px;
+  }
+
+  .palco .catalog-side {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .palco .catalog-side .btn-secondary {
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 13.5px;
+  }
+
+  .palco .catalog-badge {
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 13.5px;
+  }
+
+  .palco-sala[data-sala="catalogo"] .palco-texto {
+    padding-bottom: 26px;
+  }
+
+  .palco-sala[data-sala="catalogo"] .palco-cena {
+    flex: 1 1 0;
+    padding: 0 4% 2px;
+  }
+
+  .palco .catalog-carousel {
+    padding: 8px 8px 50px;
+    border-radius: 20px;
+  }
+
+  .palco .catalog-page-button {
+    padding: 6px;
+  }
+
+  .palco .catalog-arrow {
+    top: auto;
+    bottom: 5px;
+    transform: none;
+    width: 40px;
+    height: 40px;
+  }
+
+  .palco .catalog-arrow:hover {
+    transform: none;
+  }
+
+  .palco .catalog-counter {
+    bottom: 9px;
+  }
+
+  /* Contato: os canais, um sobre o outro */
+
+  .palco .contact-options {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .palco .contact-card {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 16px;
+  }
+
+  .palco .contact-card h3 {
+    font-size: 17px;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 12px;
+  }
+
+  /* Marcos menores: o mapa aparece mais longe */
+
+  .palco-marco.is-glifo .palco-marco-caixa > svg {
+    scale: 0.72;
+    transform-origin: 50% 100%;
+  }
+
+  .palco-marco.is-cartao .palco-marco-caixa {
+    --sobe: 64px;
+    width: 158px;
+  }
+
+  .palco-marco.is-endereco .palco-marco-caixa {
+    --sobe: 76px;
+    width: 226px;
+  }
+
+  .palco-cartao-sobre {
+    padding: 10px 12px 11px;
+    gap: 3px;
+  }
+
+  .palco-cartao-sobre strong {
+    font-size: 14px;
+  }
+
+  .palco-cartao-sobre span {
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  .palco .location-card {
+    padding: 12px 14px 13px;
+  }
+
+  .palco .location-card h3 {
+    font-size: 16px;
+  }
+
+  .palco .location-card p {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .palco .map-embed-wrapper {
+    margin-top: 9px;
+  }
+
+  .palco-rota {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    padding: 4px 6px 10px;
+    border-radius: 20px;
+    /* sem desfoque: sobre o palco em movimento ele custa caro */
+    background: rgba(36, 16, 42, 0.94);
+    box-shadow: 0 16px 40px rgba(8, 2, 10, 0.45);
+  }
+
+  /* Assinatura: uma faixa logo acima da barra de paradas, da mesma
+     largura dela, no primeiro tempo do Contato (os canais). */
+  .palco .footer {
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--palco-pe) + 2px);
+    justify-content: center;
+    gap: 12px;
+    max-width: none;
+    padding: 7px 14px 7px 8px;
+    border-radius: 20px;
+    background: rgba(36, 16, 42, 0.94);
+  }
+
+  .palco .footer-brand p {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}
+
+/* Celulares de altura média: duas fileiras na prateleira e os canais
+   sem o texto de apoio. */
+
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 780px) {
+  .palco .industry-grid {
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: clamp(88px, 25.5vw, 118px);
+  }
+
+  .palco .contact-card p {
+    display: none;
+  }
+
+  .palco-sala[data-sala="catalogo"] .palco-texto p {
+    display: none;
+  }
+}
+
+/* Celulares baixos: os textos de apoio cedem a vez e os endereços
+   ficam mais compactos, para os dois caberem no mapa. */
+
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 700px) {
+  .palco-texto {
+    padding-top: 14px;
+  }
+
+  .palco-sala[data-sala="contato"] .palco-texto > p,
+  .palco-sala[data-sala="industrias"] .palco-texto > p {
+    display: none;
+  }
+
+  .palco .contact-card {
+    padding: 11px 14px 13px;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    margin-top: 9px;
+  }
+
+  .palco .location-card {
+    padding: 10px 12px 11px;
+  }
+
+  .palco .location-card > span {
+    display: none;
+  }
+
+  .palco .location-card h3 {
+    font-size: 15px;
+  }
+
+  .palco .location-card p {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .palco .map-embed-wrapper {
+    margin-top: 7px;
+  }
+
+  .palco .map-embed-cta {
+    min-height: 34px;
+  }
+
+  .palco-marco.is-endereco .palco-marco-caixa {
+    --sobe: 60px;
+  }
+
+  .palco-marco.is-glifo .palco-marco-caixa > svg {
+    scale: 0.6;
+  }
+}
+
+/* Celulares muito pequenos (320 x 568, por exemplo). No Contato os
+   rótulos dos canais cedem a vez, para a assinatura não encostar no
+   último botão; os endereços sobem menos acima dos seus lugares. */
+
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 600px) {
+  .palco .contact-options {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .palco .contact-card {
+    padding: 9px 13px 11px;
+  }
+
+  .palco .contact-card > span {
+    display: none;
+  }
+
+  .palco .contact-card .btn-primary,
+  .palco .contact-card .btn-secondary {
+    min-height: 42px;
+    margin-top: 8px;
+  }
+
+  .palco-marco.is-endereco .palco-marco-caixa {
+    --sobe: 50px;
+  }
+
+  .palco-marco.is-glifo .palco-marco-caixa > svg {
+    scale: 0.5;
+  }
+}
+
+/* Telas estreitas (até 340px): dois cartões do Sobre ficam lado a lado
+   no mapa e precisam caber os dois; a assinatura ganha largura para os
+   direitos com ícones um pouco menores. */
+
+@media (max-width: 340px) and (orientation: portrait) {
+  .palco-marco.is-cartao:not(.is-endereco) .palco-marco-caixa {
+    width: 142px;
+  }
+
+  .palco-cartao-sobre {
+    padding: 9px 10px 10px;
+  }
+
+  .palco-cartao-sobre strong {
+    font-size: 13px;
+  }
+
+  .palco-cartao-sobre span {
+    font-size: 11px;
+  }
+
+  .palco .footer {
+    gap: 9px;
+    padding: 6px 12px 6px 7px;
+  }
+
+  .palco .footer-social {
+    gap: 4px;
+  }
+
+  .palco .footer-social-link {
+    width: 34px;
+    height: 34px;
+  }
+
+  .palco .footer-brand p {
+    font-size: 10.5px;
+  }
+}

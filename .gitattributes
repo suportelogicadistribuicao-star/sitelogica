@@ -1,0 +1,6 @@
+# O Git não converte fim de linha em nenhum arquivo: o que está na pasta é o
+# que vai para o commit e para o servidor. index.html e public/assets/**
+# vieram com CRLF do repositório de origem e vão para a KingHost byte a
+# byte; com a conversão automática do Windows (core.autocrlf) eles mudariam
+# inteiros no primeiro commit.
+* -text
