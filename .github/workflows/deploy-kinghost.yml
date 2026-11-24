@@ -1,0 +1,85 @@
+# Deploy do site institucional na hospedagem oficial (logicadistribuicao.com.br,
+# KingHost), a cada push na branch `prod`.
+#
+# O que este repositório precisa ter no GitHub (Settings → Environments):
+# um environment chamado `producao` com o secret
+#   KINGHOST_FTP_PASSWORD   senha do usuário FTP abaixo (obrigatório)
+# Host e usuário não são segredo e ficam aqui mesmo.
+#
+# Pré-requisito no painel da KingHost: Gerenciar FTP → Política de IPs →
+# "Sem nenhum bloqueio". Com "Liberar acesso nacional" (o padrão) o runner
+# do GitHub, que vem de IP estrangeiro, até loga, mas cai numa área vazia e
+# sem permissão de escrita (erros 550 "No such file" / "Permission denied").
+#
+# dist/ vai inteiro para /www/, a pasta pública do domínio principal. Dentro
+# de /www/ a KingHost também guarda uma pasta por subdomínio (/www/logicargv/
+# é o Portal RGV, publicado pelo repositório Front-End-Froneri-Site; há
+# outras, de outros projetos da empresa). Este deploy não mexe nelas: a
+# FTP-Deploy-Action guarda um arquivo de estado em /www/ com a lista do que
+# ELA publicou, só envia o que mudou e só apaga o que está nessa lista e
+# deixou de existir no dist/. Ela nunca lista o servidor.
+#   - NÃO ligar `dangerous-clean-slate`: essa opção apaga /www/ inteira,
+#     com as pastas de todos os subdomínios.
+#   - NÃO criar em public/ uma pasta com o nome de um subdomínio.
+#
+# O arquivo de estado de /www/ veio do deploy antigo, que publicava site e
+# portal juntos pelo Front-End-Froneri-Site. Por isso o primeiro deploy deste
+# repositório apaga de /www/ o portal.html e os arquivos do portal: eles
+# estão no estado e não existem mais no dist/.
+#
+# Envio só por FTPS (TLS explícito), nunca FTP aberto: a senha iria em texto
+# puro pela rede. Se o servidor derrubar o canal de dados TLS (ECONNRESET
+# "data socket", visto em 2026-10-17), o job falha e o deploy é repetido
+# (Re-run).
+
+name: Build e Deploy (producao - logicadistribuicao.com.br)
+
+on:
+  push:
+    branches:
+      - prod
+  workflow_dispatch:
+
+# O token do GitHub neste job só lê o repositório.
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: producao
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # npm ci instala exatamente o package-lock.json (e falha se ele estiver
+      # fora de sincronia): versão nova de dependência não chega à produção
+      # sem passar pelo lockfile.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build do projeto
+        run: npm run build
+
+      - name: Enviar dist por FTPS (TLS explicito)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftp.logicadistribuicao.com.br
+          port: 21
+          protocol: ftps
+          username: logicadistribuicao
+          password: ${{ secrets.KINGHOST_FTP_PASSWORD }}
+          local-dir: ./dist/
+          # Pasta pública da hospedagem. O FTP cai em "/" (= /home/logicadistribuicao)
+          # e a pasta do site é /www, com barra inicial como no FileZilla.
+          server-dir: /www/
+          # Diagnóstico temporário: imprime cada comando FTP e a resposta do
+          # servidor (a senha sai mascarada). Remover quando o deploy estabilizar.
+          log-level: verbose

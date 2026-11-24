@@ -1,0 +1,64 @@
+# Publicado em /www/, a raiz de logicadistribuicao.com.br.
+#
+# A KingHost guarda cada subdomínio numa subpasta daqui (/www/logicargv/ é o
+# Portal RGV; há outras), e o Apache aplica este arquivo a todas elas. Por
+# isso TUDO aqui é condicionado ao domínio principal: sem a condição, as
+# regras de reescrita devolviam erro 500 nos subdomínios e os cabeçalhos
+# deste site iam junto nas respostas deles (medido em 24/11/2026).
+#
+# A única diretiva que continua valendo nas subpastas é a linha de Options:
+# ela não aceita condição por domínio.
+Options -MultiViews -Indexes
+RewriteEngine On
+
+# Qualquer outro domínio: nenhuma regra de reescrita deste arquivo se aplica.
+RewriteCond %{HTTP_HOST} !^(www\.)?logicadistribuicao\.com\.br(:[0-9]+)?$ [NC]
+RewriteRule ^ - [L]
+
+# Arquivos ocultos (.ftp-deploy-sync-state.json, .env, .git...) nunca são
+# servidos. A FTP-Deploy-Action lê o estado dela por FTP, não por HTTP.
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+# O portal morava em /portal.html até 24/11/2026. Quem tem o link antigo
+# salvo cai no endereço novo (o navegador mantém o #/rota). 302 enquanto a
+# mudança é recente; pode virar 301.
+RewriteRule ^portal\.html$ https://logicargv.logicadistribuicao.com.br/ [R=302,L]
+
+# HTTP -> HTTPS. Desligado até testar na KingHost: se o TLS terminar num
+# proxy na frente do Apache sem repassar HTTPS/X-Forwarded-Proto, isto entra
+# em laço de redirecionamento. Para testar, descomente e abra http://...
+# RewriteCond %{HTTPS} !=on
+# RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
+
+# Marca as requisições do domínio principal; os cabeçalhos abaixo só saem
+# com a marca.
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Host "^(www\.)?logicadistribuicao\.com\.br(:[0-9]+)?$" SITE_PRINCIPAL
+</IfModule>
+
+<IfModule mod_headers.c>
+  # HSTS começa curto (30 dias). Subir para 31536000 depois de confirmar que
+  # tudo abre em https. Sem includeSubDomains: os subdomínios decidem o deles.
+  Header always set Strict-Transport-Security "max-age=2592000" env=SITE_PRINCIPAL
+  Header always set X-Content-Type-Options "nosniff" env=SITE_PRINCIPAL
+  Header always set X-Frame-Options "DENY" env=SITE_PRINCIPAL
+  Header always set Referrer-Policy "strict-origin-when-cross-origin" env=SITE_PRINCIPAL
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()" env=SITE_PRINCIPAL
+
+  # CSP em modo RELATÓRIO: não bloqueia nada, só avisa no console do
+  # navegador. Depois de navegar pelo site sem violações, trocar o nome do
+  # header para Content-Security-Policy.
+  #   frame-src: os dois mapas do Google em index.html.
+  Header always set Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" env=SITE_PRINCIPAL
+
+  # HTML sempre revalida: um deploy novo aparece sem Ctrl+F5. Os .js/.css
+  # do Vite têm hash no nome e podem ficar no cache à vontade.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache" env=SITE_PRINCIPAL
+  </FilesMatch>
+</IfModule>
