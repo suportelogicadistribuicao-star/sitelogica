@@ -11,26 +11,34 @@
 # do GitHub, que vem de IP estrangeiro, até loga, mas cai numa área vazia e
 # sem permissão de escrita (erros 550 "No such file" / "Permission denied").
 #
+# Envio com lftp, instalado e executado direto no runner (sem action de
+# terceiros tocando na senha). Antes era a SamKirkland/FTP-Deploy-Action, que
+# falhava com ECONNRESET "data socket" (2026-10-17 e 2026-11-24): o servidor
+# é ProFTPD e derrubava o canal de dados TLS aberto pela biblioteca Node da
+# action. O lftp reaproveita a sessão TLS no canal de dados como o ProFTPD
+# exige.
+#
+# Só FTPS (TLS explícito), com o certificado verificado, nunca FTP aberto:
+#   - O certificado do servidor é *.kinghost.net, por isso a conexão usa o
+#     nome do servidor (web-ded-185905a.kinghost.net), e não
+#     ftp.logicadistribuicao.com.br (que é só um apelido DNS dele). Se a
+#     KingHost migrar a conta de servidor, atualizar FTP_HOST: o nome novo
+#     aparece em `nslookup ftp.logicadistribuicao.com.br`.
+#   - O servidor não envia o certificado intermediário da GlobalSign, então
+#     ele vai versionado em .github/certs/ e é somado às CAs do sistema.
+#     Esse intermediário vale até 2029-06-23.
+#
 # dist/ vai inteiro para /www/, a pasta pública do domínio principal. Dentro
 # de /www/ a KingHost também guarda uma pasta por subdomínio (/www/logicargv/
 # é o Portal RGV, publicado pelo repositório Front-End-Froneri-Site; há
-# outras, de outros projetos da empresa). Este deploy não mexe nelas: a
-# FTP-Deploy-Action guarda um arquivo de estado em /www/ com a lista do que
-# ELA publicou, só envia o que mudou e só apaga o que está nessa lista e
-# deixou de existir no dist/. Ela nunca lista o servidor.
-#   - NÃO ligar `dangerous-clean-slate`: essa opção apaga /www/ inteira,
-#     com as pastas de todos os subdomínios.
+# outras, de outros projetos da empresa). Por isso o mirror roda SEM
+# --delete: ele envia o que é novo ou mudou e nunca apaga nada no servidor.
+#   - NÃO adicionar --delete no mirror de /www/: apagaria as pastas de todos
+#     os subdomínios.
 #   - NÃO criar em public/ uma pasta com o nome de um subdomínio.
-#
-# O arquivo de estado de /www/ veio do deploy antigo, que publicava site e
-# portal juntos pelo Front-End-Froneri-Site. Por isso o primeiro deploy deste
-# repositório apaga de /www/ o portal.html e os arquivos do portal: eles
-# estão no estado e não existem mais no dist/.
-#
-# Envio só por FTPS (TLS explícito), nunca FTP aberto: a senha iria em texto
-# puro pela rede. Se o servidor derrubar o canal de dados TLS (ECONNRESET
-# "data socket", visto em 2026-10-17), o job falha e o deploy é repetido
-# (Re-run).
+#   - Consequência: arquivos que saem do dist/ (bundles antigos com hash,
+#     restos do portal antigo como portal.html) ficam no servidor até serem
+#     apagados à mão pelo FileZilla.
 
 name: Build e Deploy (producao - logicadistribuicao.com.br)
 
@@ -68,18 +76,36 @@ jobs:
       - name: Build do projeto
         run: npm run build
 
+      - name: Instalar lftp
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
       - name: Enviar dist por FTPS (TLS explicito)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftp.logicadistribuicao.com.br
-          port: 21
-          protocol: ftps
-          username: logicadistribuicao
-          password: ${{ secrets.KINGHOST_FTP_PASSWORD }}
-          local-dir: ./dist/
-          # Pasta pública da hospedagem. O FTP cai em "/" (= /home/logicadistribuicao)
-          # e a pasta do site é /www, com barra inicial como no FileZilla.
-          server-dir: /www/
-          # Diagnóstico temporário: imprime cada comando FTP e a resposta do
-          # servidor (a senha sai mascarada). Remover quando o deploy estabilizar.
-          log-level: verbose
+        env:
+          FTP_HOST: web-ded-185905a.kinghost.net
+          FTP_USER: logicadistribuicao
+          # --env-password lê a senha desta variável: ela não aparece na
+          # linha de comando nem no script do lftp.
+          LFTP_PASSWORD: ${{ secrets.KINGHOST_FTP_PASSWORD }}
+        run: |
+          CA_BUNDLE="$RUNNER_TEMP/ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt \
+              .github/certs/globalsign-gcc-r46-alphassl-ca-2025.pem > "$CA_BUNDLE"
+
+          lftp <<EOF
+          set cmd:fail-exit yes
+          set dns:order "inet"
+          set net:timeout 30
+          set net:max-retries 3
+          set net:reconnect-interval-base 5
+          set ftp:ssl-force yes
+          set ftp:ssl-protect-data yes
+          set ftp:passive-mode yes
+          set ssl:verify-certificate yes
+          set ssl:check-hostname yes
+          set ssl:ca-file "$CA_BUNDLE"
+          open --env-password -u "$FTP_USER" "$FTP_HOST"
+          mirror --reverse --verbose --no-perms ./dist/ /www/
+          bye
+          EOF
