@@ -11,12 +11,21 @@
 # do GitHub, que vem de IP estrangeiro, até loga, mas cai numa área vazia e
 # sem permissão de escrita (erros 550 "No such file" / "Permission denied").
 #
-# Envio com lftp, instalado e executado direto no runner (sem action de
-# terceiros tocando na senha). Antes era a SamKirkland/FTP-Deploy-Action, que
-# falhava com ECONNRESET "data socket" (2026-10-17 e 2026-11-24): o servidor
-# é ProFTPD e derrubava o canal de dados TLS aberto pela biblioteca Node da
-# action. O lftp reaproveita a sessão TLS no canal de dados como o ProFTPD
-# exige.
+# Envio com curl, que já vem no runner (nada instalado, nenhuma action ou
+# biblioteca de terceiros tocando na senha). Ele só faz STOR, arquivo por
+# arquivo: não lista nem baixa nada do servidor.
+#
+# Histórico das tentativas de 2026-11-24, para ninguém repetir:
+#   - SamKirkland/FTP-Deploy-Action: "Client is closed because read ECONNRESET
+#     (data socket)" em 5 s. A mesma action publica o Portal RGV neste
+#     servidor sem erro, então não é rede nem senha. Hipótese (não
+#     confirmada): em pasta sem o arquivo de estado dela, o download desse
+#     arquivo derruba a conexão.
+#   - lftp: duas falhas por tempo esgotado (3min29s e 45s). Causa não
+#     identificada; o log de debug não chegou a ser analisado.
+#
+# Se o envio falhar, o passo publica a mensagem de erro do curl como anotação
+# do run (aparece no resumo do run, sem precisar abrir o log).
 #
 # Só FTPS (TLS explícito), com o certificado verificado, nunca FTP aberto:
 #   - O certificado do servidor é *.kinghost.net, por isso a conexão usa o
@@ -31,10 +40,10 @@
 # dist/ vai inteiro para /www/, a pasta pública do domínio principal. Dentro
 # de /www/ a KingHost também guarda uma pasta por subdomínio (/www/logicargv/
 # é o Portal RGV, publicado pelo repositório Front-End-Froneri-Site; há
-# outras, de outros projetos da empresa). Por isso o mirror roda SEM
-# --delete: ele envia o que é novo ou mudou e nunca apaga nada no servidor.
-#   - NÃO adicionar --delete no mirror de /www/: apagaria as pastas de todos
-#     os subdomínios.
+# outras, de outros projetos da empresa). Por isso o envio só grava: manda
+# todos os arquivos do dist/ por cima e nunca apaga nada no servidor.
+#   - NÃO trocar por um envio que sincroniza apagando (mirror --delete,
+#     clean-slate): apagaria as pastas de todos os subdomínios.
 #   - NÃO criar em public/ uma pasta com o nome de um subdomínio.
 #   - Consequência: arquivos que saem do dist/ (bundles antigos com hash,
 #     restos do portal antigo como portal.html) ficam no servidor até serem
@@ -76,43 +85,80 @@ jobs:
       - name: Build do projeto
         run: npm run build
 
-      - name: Instalar lftp
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lftp
-
       - name: Enviar dist por FTPS (TLS explicito)
         env:
           FTP_HOST: web-ded-185905a.kinghost.net
           FTP_USER: logicadistribuicao
-          # --env-password lê a senha desta variável: ela não aparece na
-          # linha de comando nem no script do lftp.
-          LFTP_PASSWORD: ${{ secrets.KINGHOST_FTP_PASSWORD }}
+          FTP_PASSWORD: ${{ secrets.KINGHOST_FTP_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          if [ -z "$FTP_PASSWORD" ]; then
+            echo "::error title=Deploy::secret KINGHOST_FTP_PASSWORD vazio no environment producao"
+            exit 1
+          fi
+
+          # Os caminhos entram na URL sem codificação: só nomes simples.
+          RUINS=$(find dist -type f | grep -vE '^[A-Za-z0-9._/-]+$' || true)
+          if [ -n "$RUINS" ]; then
+            echo "::error title=Deploy::arquivo em dist/ com caractere que precisa de codificacao na URL"
+            echo "$RUINS"
+            exit 1
+          fi
+
           CA_BUNDLE="$RUNNER_TEMP/ca-bundle.pem"
           cat /etc/ssl/certs/ca-certificates.crt \
               .github/certs/globalsign-gcc-r46-alphassl-ca-2025.pem > "$CA_BUNDLE"
 
-          # Diagnóstico temporário: `debug 3` imprime cada comando FTP, a
-          # resposta do servidor e o handshake TLS (o lftp mostra a senha como
-          # "PASS XXXX" e o GitHub ainda mascara o secret no log). Remover
-          # quando o deploy estabilizar.
-          lftp <<EOF
-          debug -t 3
-          set cmd:fail-exit yes
-          set dns:order "inet"
-          set net:timeout 20
-          set net:max-retries 2
-          set net:reconnect-interval-base 5
-          set ftp:ssl-force yes
-          set ftp:ssl-protect-data yes
-          set ftp:passive-mode yes
-          set ssl:verify-certificate yes
-          set ssl:check-hostname yes
-          set ssl:ca-file "$CA_BUNDLE"
-          open --env-password -u "$FTP_USER" "$FTP_HOST"
-          cd /www/
-          cls -l /www/.ftp-deploy-sync-state.json || echo "listagem de /www/ falhou"
-          mirror --reverse --verbose --no-perms ./dist/ /www/
-          bye
-          EOF
+          # A senha vai num arquivo de configuração do curl (só o dono lê,
+          # apagado ao sair), não na linha de comando. Sem --verbose: ele
+          # imprimiria o comando PASS.
+          CFG="$RUNNER_TEMP/curl-deploy.cfg"
+          OUT="$RUNNER_TEMP/curl-deploy.out"
+          ERR="$RUNNER_TEMP/curl-deploy.err"
+          ( umask 077; : > "$CFG" )
+          trap 'rm -f "$CFG"' EXIT
+
+          SENHA=$(printf '%s' "$FTP_PASSWORD" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+          {
+            printf 'user = "%s:%s"\n' "$FTP_USER" "$SENHA"
+            printf 'cacert = "%s"\n' "$CA_BUNDLE"
+            # ssl-reqd: TLS obrigatório no canal de controle e no de dados.
+            # fail-early: para no primeiro arquivo que falhar.
+            printf '%s\n' \
+              'ssl-reqd' \
+              'ipv4' \
+              'ftp-create-dirs' \
+              'globoff' \
+              'fail-early' \
+              'silent' \
+              'show-error' \
+              'connect-timeout = 20' \
+              'speed-limit = 1' \
+              'speed-time = 30' \
+              'retry = 2' \
+              'retry-delay = 5' \
+              'write-out = "%{response_code} %{url_effective}\n"'
+            # index.html por último: ele aponta para os bundles com hash, que
+            # já precisam estar no servidor.
+            { find dist -type f ! -path dist/index.html | sort; echo dist/index.html; } |
+              while IFS= read -r f; do
+                printf 'upload-file = "%s"\nurl = "ftp://%s//www/%s"\n' "$f" "$FTP_HOST" "${f#dist/}"
+              done
+          } >> "$CFG"
+
+          TOTAL=$(grep -c '^url = ' "$CFG")
+          set +e
+          curl --config "$CFG" > "$OUT" 2> "$ERR"
+          RC=$?
+          set -e
+          cat "$OUT"
+          cat "$ERR" >&2
+          ENVIADOS=$(grep -c '^2' "$OUT" || true)
+
+          if [ "$RC" -ne 0 ]; then
+            MSG=$(tail -n 15 "$ERR" | tr '\r\n' '  ' | sed 's/%/%25/g')
+            echo "::error title=Envio FTPS falhou::curl saiu com $RC apos $ENVIADOS de $TOTAL arquivos. $MSG"
+            exit "$RC"
+          fi
+          echo "::notice title=Deploy::$TOTAL arquivos enviados para /www/"
